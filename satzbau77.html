@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Assistent: Satzbau-Puzzle</title>
+    <!-- Polyfill für Drag & Drop auf Touch-Geräten -->
+    <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.3.1/DragDropTouch.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .intro-section {
+            background: #eef7fd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 6px solid var(--secondary-color);
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+
+        .task-card {
+            border: 1px solid #e1e4e8;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .instruction {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        /* Wort-Pool */
+        .word-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            min-height: 50px;
+            justify-content: center;
+        }
+
+        .word-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.2s;
+        }
+
+        .word-btn:hover { background: #eef7fd; }
+        .word-btn.used { opacity: 0.3; cursor: default; pointer-events: none; }
+
+        /* Ziel-Bereich */
+        .sentence-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            min-height: 60px;
+            background: #fff;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sentence-word {
+            padding: 8px 16px;
+            background: var(--secondary-color);
+            color: white;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Feedback */
+        .feedback-area {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            min-height: 25px;
+        }
+
+        .correct { color: var(--success-color); }
+        .incorrect { color: var(--error-color); }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: opacity 0.2s;
+        }
+
+        .btn-reset { background-color: #7f8c8d; }
+        .btn-solution { background-color: var(--secondary-color); }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            .word-btn, .sentence-word { font-size: 0.9em; padding: 6px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Russische Grammatik</h1>
+    <h2>Satzbau-Puzzle</h2>
+
+    <div class="intro-section">
+        <strong>Anleitung:</strong> Bringe die Wörter in die richtige Reihenfolge, um einen korrekten russischen Satz zu bilden. 
+        Klicke auf die Wörter im grauen Feld, um sie dem Satz hinzuzufügen. 
+        Klicke auf ein Wort im weißen Feld, um es wieder zu entfernen.
+        <br><br>
+        <em>Hinweis: Das Possessivadjektiv steht meist direkt vor dem Substantiv.</em>
+    </div>
+
+    <div id="puzzle-container">
+        <!-- JS generiert die Sätze hier -->
+    </div>
+</div>
+
+<script>
+    const puzzles = [
+        { 
+            words: ["ЭТО", "ПАПИНА", "НОВАЯ", "МАШИНА"], 
+            correct: ["ЭТО", "ПАПИНА", "НОВАЯ", "МАШИНА"],
+            alt: ["ЭТО", "НОВАЯ", "ПАПИНА", "МАШИНА"] 
+        },
+        { 
+            words: ["МАМИН", "ТОРТ", "ОЧЕНЬ", "ВКУСНЫЙ"], 
+            correct: ["МАМИН", "ТОРТ", "ОЧЕНЬ", "ВКУСНЫЙ"] 
+        },
+        { 
+            words: ["ГДЕ", "ЛЕЖИТ", "САШИН", "КАРАНДАШ"], 
+            correct: ["ГДЕ", "ЛЕЖИТ", "САШИН", "КАРАНДАШ"],
+            q: true
+        },
+        { 
+            words: ["ЭТО", "БАБУШКИНЫ", "СТАРЫЕ", "ОЧКИ"], 
+            correct: ["ЭТО", "БАБУШКИНЫ", "СТАРЫЕ", "ОЧКИ"] 
+        },
+        { 
+            words: ["Я", "ВИЖУ", "ЛИСИЦЫН", "ХВОСТ"], 
+            correct: ["Я", "ВИЖУ", "ЛИСИЦЫН", "ХВОСТ"] 
+        },
+        { 
+            words: ["ДАШИНА", "КУРТКА", "ВИСИТ", "ЗДЕСЬ"], 
+            correct: ["ДАШИНА", "КУРТКА", "ВИСИТ", "ЗДЕСЬ"] 
+        },
+        { 
+            words: ["ЭТО", "ЮЛИНА", "КРАСНАЯ", "ПОМАДА"], 
+            correct: ["ЭТО", "ЮЛИНА", "КРАСНАЯ", "ПОМАДА"] 
+        },
+        { 
+            words: ["КУРИЦЫНО", "ЯЙЦО", "ЛЕЖИТ", "ТУТ"], 
+            correct: ["КУРИЦЫНО", "ЯЙЦО", "ЛЕЖИТ", "ТУТ"] 
+        },
+        { 
+            words: ["ТЁТИНО", "ПЛАТЬЕ", "ОЧЕНЬ", "КРАСИВОЕ"], 
+            correct: ["ТЁТИНО", "ПЛАТЬЕ", "ОЧЕНЬ", "КРАСИВОЕ"] 
+        },
+        { 
+            words: ["ЭТО", "ИЛЬИН", "НОВЫЙ", "ТЕЛЕФОН"], 
+            correct: ["ЭТО", "ИЛЬИН", "НОВЫЙ", "ТЕЛЕФОН"] 
+        }
+    ];
+
+    let userAnswers = puzzles.map(() => []);
+
+    function renderPuzzles() {
+        const container = document.getElementById('puzzle-container');
+        container.innerHTML = '';
+
+        puzzles.forEach((puzzle, pIdx) => {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            
+            // Titel
+            const title = document.createElement('div');
+            title.className = 'instruction';
+            title.innerText = `Satz ${pIdx + 1}:`;
+            card.appendChild(title);
+
+            // Wort-Pool
+            const pool = document.createElement('div');
+            pool.className = 'word-pool';
+            const shuffledWords = [...puzzle.words].sort((a, b) => a.localeCompare(b)); // Alphabetisch sortiert im Pool
+            
+            shuffledWords.forEach((word, wIdx) => {
+                const btn = document.createElement('button');
+                btn.className = 'word-btn';
+                btn.innerText = word;
+                
+                // Zählen, wie oft das Wort im Pool ist und wie oft schon benutzt
+                const countInPool = puzzle.words.filter(w => w === word).length;
+                const countInAnswer = userAnswers[pIdx].filter(w => w === word).length;
+                
+                if (countInAnswer >= countInPool) {
+                    btn.classList.add('used');
+                } else {
+                    btn.onclick = () => addWord(pIdx, word);
+                }
+                pool.appendChild(btn);
+            });
+            card.appendChild(pool);
+
+            // Ziel-Bereich
+            const sentenceArea = document.createElement('div');
+            sentenceArea.className = 'sentence-area';
+            userAnswers[pIdx].forEach((word, uIdx) => {
+                const span = document.createElement('span');
+                span.className = 'sentence-word';
+                span.innerText = word;
+                span.onclick = () => removeWord(pIdx, uIdx);
+                sentenceArea.appendChild(span);
+            });
+            card.appendChild(sentenceArea);
+
+            // Feedback
+            const feedback = document.createElement('div');
+            feedback.className = 'feedback-area';
+            if (userAnswers[pIdx].length === puzzle.words.length) {
+                if (checkCorrect(pIdx)) {
+                    feedback.innerHTML = '<span class="correct">Richtig!</span>';
+                } else {
+                    feedback.innerHTML = '<span class="incorrect">Noch nicht ganz richtig...</span>';
+                }
+            }
+            card.appendChild(feedback);
+
+            // Buttons
+            const btnRow = document.createElement('div');
+            btnRow.className = 'button-row';
+            
+            const resetBtn = document.createElement('button');
+            resetBtn.className = 'btn btn-reset';
+            resetBtn.innerText = 'Zurücksetzen';
+            resetBtn.onclick = () => resetPuzzle(pIdx);
+            
+            const solutionBtn = document.createElement('button');
+            solutionBtn.className = 'btn btn-solution';
+            solutionBtn.innerText = 'Lösung zeigen';
+            solutionBtn.onclick = () => showSolution(pIdx);
+            
+            btnRow.appendChild(resetBtn);
+            btnRow.appendChild(solutionBtn);
+            card.appendChild(btnRow);
+
+            container.appendChild(card);
+        });
+    }
+
+    function addWord(pIdx, word) {
+        userAnswers[pIdx].push(word);
+        renderPuzzles();
+    }
+
+    function removeWord(pIdx, uIdx) {
+        userAnswers[pIdx].splice(uIdx, 1);
+        renderPuzzles();
+    }
+
+    function resetPuzzle(pIdx) {
+        userAnswers[pIdx] = [];
+        renderPuzzles();
+    }
+
+    function showSolution(pIdx) {
+        userAnswers[pIdx] = [...puzzles[pIdx].correct];
+        renderPuzzles();
+    }
+
+    function checkCorrect(pIdx) {
+        const userStr = userAnswers[pIdx].join(' ');
+        const correctStr = puzzles[pIdx].correct.join(' ');
+        const altStr = puzzles[pIdx].alt ? puzzles[pIdx].alt.join(' ') : null;
+        
+        return userStr === correctStr || userStr === altStr;
+    }
+
+    // Initial Start
+    renderPuzzles();
+</script>
+
+</body>
+</html>
