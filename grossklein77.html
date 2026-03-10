@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Assistent: Groß- oder Kleinschreibung</title>
+    <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.3.1/DragDropTouch.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .intro-section {
+            background: #eef7fd;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 6px solid var(--secondary-color);
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .task-card {
+            border: 1px solid #e1e4e8;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            background: #fff;
+            transition: transform 0.2s;
+        }
+
+        .sentence-context {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .options-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .choice-btn {
+            padding: 10px 25px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        /* Sofortiges Feedback */
+        .choice-btn.correct {
+            background-color: var(--success-color) !important;
+            color: white !important;
+            border-color: #1e8449 !important;
+        }
+
+        .choice-btn.incorrect {
+            background-color: var(--error-color) !important;
+            color: white !important;
+            border-color: #c0392b !important;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: opacity 0.2s;
+        }
+
+        .btn-reset { background-color: #7f8c8d; }
+        .btn-solution { background-color: var(--secondary-color); }
+        .btn:hover { opacity: 0.9; }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            .choice-btn { flex: 1; padding: 10px 5px; font-size: 0.95em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Russische Grammatik</h1>
+    <h2>Groß- oder Kleinschreibung</h2>
+
+    <div class="intro-section">
+        <strong>Einführung: Rechtschreibregeln</strong><br>
+        Bei russischen Possessivadjektiven auf -ИН- / -ЫН- gibt es eine wichtige Regel für die Groß- und Kleinschreibung:
+        <br><br>
+        <ul>
+            <li><strong>Großschreibung:</strong> Wenn sich das Adjektiv auf eine <strong>konkrete, individuelle Person</strong> bezieht (z. B. Mamas, Saschas, Papas).</li>
+            <li><strong>Kleinschreibung:</strong> Wenn das Wort Teil einer <strong>Redewendung</strong>, eines <strong>Pflanzennamens</strong> oder eines allgemeinen Begriffs ist.</li>
+        </ul>
+        <em>Klicke auf die richtige Form im Satz!</em>
+    </div>
+
+    <div id="exercise-container">
+        <!-- Aufgaben werden hier generiert -->
+    </div>
+</div>
+
+<script>
+    const tasks = [
+        { sentence: "Это ____ торт, не ешь его!", options: ["Мамин", "мамин"], correct: "Мамин" },
+        { sentence: "В саду цветут ____ глазки.", options: ["Анютины", "анютины"], correct: "анютины" },
+        { sentence: "Где лежит ____ карандаш?", options: ["Сашин", "сашин"], correct: "Сашин" },
+        { sentence: "Это не документ, а ____ грамота.", options: ["Филькина", "филькина"], correct: "филькина" },
+        { sentence: "____ машина стоит у дома.", options: ["Папина", "папина"], correct: "Папина" },
+        { sentence: "____ платье висит в шкаfu.", options: ["Бабушкино", "бабушкино"], correct: "Бабушкино" },
+        { sentence: "Я купила семена цветов „____ глазки“.", options: ["Анютины", "анютины"], correct: "анютины" },
+        { sentence: "Это ____ помада?", options: ["Юлина", "юлина"], correct: "Юлина" },
+        { sentence: "____ телефон разрядился.", options: ["Ильин", "ильин"], correct: "Ильин" },
+        { sentence: "Опять ты принёс эту ____ грамоту!", options: ["Филькину", "филькину"], correct: "филькину" },
+        { sentence: "____ куртка висит на крючке.", options: ["Дашина", "дашина"], correct: "Дашина" },
+        { sentence: "Это ____ дом?", options: ["Дарьин", "дарьин"], correct: "Дарьин" },
+        { sentence: "Это ____ яйцо (von dieser konkreten Henne).", options: ["Курицыно", "курицыно"], correct: "Курицыно" },
+        { sentence: "____ хвост мелькнул в лесу.", options: ["Лисицын", "лисицын"], correct: "Лисицын" },
+        { sentence: "____ рюкзак очень тяжёлый.", options: ["Ванин", "ванин"], correct: "Ванин" },
+        { sentence: "Где ____ вещи?", options: ["Подругины", "подругины"], correct: "Подruгины" }, // Typo fix
+        { sentence: "____ книга лежит на полке.", options: ["Сестрина", "сестрина"], correct: "Сестрина" },
+        { sentence: "____ игрушки везде!", options: ["Дочкины", "дочкины"], correct: "Дочкины" },
+        { sentence: "Мне нравится ____ взгляд.", options: ["Юрин", "юрин"], correct: "Юрин" },
+        { sentence: "Это ____ перо (von meiner Meise).", options: ["Синицыно", "синицыно"], correct: "Синицыно" }
+    ];
+
+    // Fix typo in data
+    tasks[15].correct = "Подругины"; 
+    tasks[15].options = ["Подругины", "подругины"];
+
+    const container = document.getElementById('exercise-container');
+
+    tasks.forEach((task, index) => {
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.id = `task-${index}`;
+
+        const optionsHtml = task.options.map(opt => 
+            `<button class="choice-btn" onclick="checkChoice(${index}, '${opt}', this)">${opt}</button>`
+        ).join('');
+
+        card.innerHTML = `
+            <div class="sentence-context">${task.sentence.replace('____', '<span id="gap-' + index + '">____</span>')}</div>
+            <div class="options-wrapper">
+                ${optionsHtml}
+            </div>
+            <div class="control-row">
+                <button class="btn btn-reset" onclick="resetTask(${index})">Zurücksetzen</button>
+                <button class="btn btn-solution" onclick="showSolution(${index})">Lösung anzeigen</button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    window.checkChoice = function(taskIdx, selected, btn) {
+        const task = tasks[taskIdx];
+        const card = document.getElementById(`task-${taskIdx}`);
+        const gap = document.getElementById(`gap-${taskIdx}`);
+        const buttons = card.querySelectorAll('.choice-btn');
+
+        buttons.forEach(b => b.classList.remove('correct', 'incorrect'));
+
+        if (selected === task.correct) {
+            btn.classList.add('correct');
+            gap.innerText = selected;
+            gap.style.color = "var(--success-color)";
+            gap.style.fontWeight = "bold";
+        } else {
+            btn.classList.add('incorrect');
+            gap.innerText = "____";
+            gap.style.color = "var(--primary-color)";
+        }
+    };
+
+    window.resetTask = function(taskIdx) {
+        const card = document.getElementById(`task-${taskIdx}`);
+        const gap = document.getElementById(`gap-${taskIdx}`);
+        const buttons = card.querySelectorAll('.choice-btn');
+        
+        buttons.forEach(b => b.classList.remove('correct', 'incorrect'));
+        gap.innerText = "____";
+        gap.style.color = "var(--primary-color)";
+        gap.style.fontWeight = "normal";
+    };
+
+    window.showSolution = function(taskIdx) {
+        const task = tasks[taskIdx];
+        const card = document.getElementById(`task-${taskIdx}`);
+        const gap = document.getElementById(`gap-${taskIdx}`);
+        const buttons = card.querySelectorAll('.choice-btn');
+
+        buttons.forEach(b => {
+            b.classList.remove('incorrect');
+            if (b.innerText === task.correct) {
+                b.classList.add('correct');
+                gap.innerText = task.correct;
+                gap.style.color = "var(--success-color)";
+                gap.style.fontWeight = "bold";
+            } else {
+                b.classList.remove('correct');
+            }
+        });
+    };
+</script>
+
+</body>
+</html>
