@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Assistent: Wortarten-Check</title>
+    <!-- Polyfill für Drag & Drop auf Touch-Geräten -->
+    <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.3.1/DragDropTouch.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .intro-section {
+            background: #eef7fd;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 6px solid var(--secondary-color);
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+
+        /* Wort-Pool */
+        .drag-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background: #fdfdfd;
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            min-height: 100px;
+            margin-bottom: 30px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .draggable-word {
+            padding: 10px 16px;
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            cursor: grab;
+            user-select: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .draggable-word:active { cursor: grabbing; }
+
+        /* Drop-Zonen */
+        .drop-zones-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .drop-zone {
+            background: #fff;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 300px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone.hover {
+            border-color: var(--secondary-color);
+            background-color: #f0f8ff;
+        }
+
+        .drop-zone h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+
+        .category-desc {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        /* Feedback-Farben */
+        .draggable-word.correct {
+            background-color: var(--success-color) !important;
+            color: white !important;
+            border-color: #1e8449 !important;
+        }
+
+        .draggable-word.incorrect {
+            background-color: var(--error-color) !important;
+            color: white !important;
+            border-color: #c0392b !important;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: opacity 0.2s;
+        }
+
+        .btn-reset { background-color: #7f8c8d; }
+        .btn-solution { background-color: var(--secondary-color); }
+        .btn:hover { opacity: 0.9; }
+
+        @media (max-width: 600px) {
+            .drop-zones-container { grid-template-columns: 1fr; }
+            .drop-zone { min-height: 200px; }
+            .container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Russische Grammatik</h1>
+    <h2>Wortarten-Check: Pronomen vs. Adjektiv</h2>
+
+    <div class="intro-section">
+        <strong>Unterscheidungshilfe:</strong>
+        <ul>
+            <li><strong>Possessivpronomen:</strong> Beziehen sich auf grammatische Personen (ich, du, wir...). Beispiele: „mein“, „dein“, „unser“ (МОЙ, ТВОЙ, НАШ).</li>
+            <li><strong>Possessivadjektive:</strong> Werden von Substantiven oder Namen abgeleitet. Beispiele: „Mamas“, „Papas“, „Annas“ (МАМИН, ПАПИН, АННИН).</li>
+        </ul>
+        <p><em>Ziehe die Wörter in die richtige Kategorie. Du erhältst sofort Feedback!</em></p>
+    </div>
+
+    <div class="task-area">
+        <!-- Wort-Pool -->
+        <div class="drag-pool" id="word-pool" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w1" data-type="pronoun">МОЙ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w2" data-type="adjective">МАМИН</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w3" data-type="pronoun">ТВОЯ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w4" data-type="adjective">ПАПИНА</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w5" data-type="pronoun">НАШЕ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w6" data-type="adjective">БАБУШКИНО</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w7" data-type="pronoun">ВАШИ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w8" data-type="adjective">ТЁТИНЫ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w9" data-type="adjective">САШИН</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w10" data-type="pronoun">ЕГО</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w11" data-type="adjective">КУРИЦЫНО</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w12" data-type="pronoun">ЕЁ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w13" data-type="adjective">ЛИСИЦЫН</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w14" data-type="pronoun">ИХ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w15" data-type="adjective">ЮЛИНА</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w16" data-type="pronoun">ТВОЁ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w17" data-type="adjective">ДЯДИН</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w18" data-type="pronoun">МОИ</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w19" data-type="adjective">СЕСТРИНО</div>
+            <div class="draggable-word" draggable="true" ondragstart="handleDragStart(event)" id="w20" data-type="pronoun">НАША</div>
+        </div>
+
+        <div class="drop-zones-container">
+            <div class="drop-zone" id="pronoun-zone" data-expected="pronoun" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                <h3>Possessivpronomen</h3>
+                <div class="category-desc">(мой, твой, наш...)</div>
+            </div>
+            <div class="drop-zone" id="adjective-zone" data-expected="adjective" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                <h3>Possessivadjektive</h3>
+                <div class="category-desc">(мамин, папин, сашин...)</div>
+            </div>
+        </div>
+
+        <div class="button-row">
+            <button class="btn btn-reset" onclick="resetTask()">Zurücksetzen & Mischen</button>
+            <button class="btn btn-solution" onclick="showSolution()">Lösung anzeigen</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleDragStart(ev) {
+        ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    function handleDragOver(ev) {
+        ev.preventDefault();
+        const zone = ev.target.closest('.drop-zone');
+        if (zone) zone.classList.add('hover');
+    }
+
+    function handleDragLeave(ev) {
+        const zone = ev.target.closest('.drop-zone');
+        if (zone) zone.classList.remove('hover');
+    }
+
+    function handleDrop(ev) {
+        ev.preventDefault();
+        const id = ev.dataTransfer.getData("text");
+        const item = document.getElementById(id);
+        const dropzone = ev.target.closest('.drop-zone') || ev.target.closest('.drag-pool');
+        
+        if (dropzone) {
+            dropzone.classList.remove('hover');
+            dropzone.appendChild(item);
+            
+            // Sofortiges Feedback
+            if (dropzone.classList.contains('drop-zone')) {
+                const expected = dropzone.getAttribute('data-expected');
+                const actual = item.getAttribute('data-type');
+                
+                if (actual === expected) {
+                    item.classList.add('correct');
+                    item.classList.remove('incorrect');
+                } else {
+                    item.classList.add('incorrect');
+                    item.classList.remove('correct');
+                }
+            } else {
+                // Zurück im Pool: Farben entfernen
+                item.classList.remove('correct', 'incorrect');
+            }
+        }
+    }
+
+    function shufflePool() {
+        const pool = document.getElementById('word-pool');
+        for (let i = pool.children.length; i >= 0; i--) {
+            pool.appendChild(pool.children[Math.random() * i | 0]);
+        }
+    }
+
+    function resetTask() {
+        const pool = document.getElementById('word-pool');
+        const items = document.querySelectorAll('.draggable-word');
+        items.forEach(item => {
+            item.classList.remove('correct', 'incorrect');
+            pool.appendChild(item);
+        });
+        shufflePool();
+    }
+
+    function showSolution() {
+        const items = document.querySelectorAll('.draggable-word');
+        const pronounZone = document.getElementById('pronoun-zone');
+        const adjectiveZone = document.getElementById('adjective-zone');
+
+        items.forEach(item => {
+            const type = item.getAttribute('data-type');
+            item.classList.remove('incorrect');
+            item.classList.add('correct');
+            if (type === 'pronoun') {
+                pronounZone.appendChild(item);
+            } else {
+                adjectiveZone.appendChild(item);
+            }
+        });
+    }
+
+    // Initialisierung: Mischen beim Laden
+    document.addEventListener('DOMContentLoaded', shufflePool);
+</script>
+
+</body>
+</html>
