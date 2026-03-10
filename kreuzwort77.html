@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Assistent: Kreuzwort-Ableitung</title>
+    <!-- Polyfill für Drag & Drop auf Touch-Geräten -->
+    <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.3.1/DragDropTouch.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .intro-section {
+            background: #eef7fd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 6px solid var(--secondary-color);
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+
+        .crossword-list {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .task-item {
+            background: #fff;
+            border: 1px solid #e1e4e8;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .clue {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        /* Gitter-Zellen */
+        .grid-row {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .cell {
+            width: 35px;
+            height: 35px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            background: #fafafa;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .cell.correct { background-color: var(--success-color); color: white; border-color: #1e8449; }
+        .cell.error { background-color: var(--error-color); color: white; border-color: #c0392b; }
+
+        /* Virtuelle Tastatur */
+        .keypad {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .key {
+            padding: 8px 12px;
+            background: #eee;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+
+        .key:hover { background: #ddd; }
+        .key:active { background: #ccc; }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            font-size: 0.85em;
+        }
+
+        .btn-reset { background-color: #7f8c8d; }
+        .btn-solution { background-color: var(--secondary-color); }
+
+        @media (max-width: 600px) {
+            .cell { width: 30px; height: 30px; font-size: 1em; }
+            .key { padding: 6px 10px; font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Russische Grammatik</h1>
+    <h2>Ableitungs-Rätsel</h2>
+
+    <div class="intro-section">
+        <strong>Anleitung:</strong> Bilde aus dem genannten Substantiv das passende **maskuline Possessivadjektiv** (Endung auf -ИН oder -ЫН).
+        <br><br>
+        Klicke auf die Buchstaben des Tastenfeldes, um die Kästchen zu füllen. 
+        <em>Beispiel: СЕСТРА &rarr; СЕСТРИН.</em>
+    </div>
+
+    <div id="crossword-container" class="crossword-list">
+        <!-- JS generiert die Aufgaben hier -->
+    </div>
+</div>
+
+<script>
+    const puzzleData = [
+        { clue: "МАМА", answer: "МАМИН" },
+        { clue: "ПАПА", answer: "ПАПИН" },
+        { clue: "СЕСТРА", answer: "СЕСТРИН" },
+        { clue: "ТЁТЯ", answer: "ТЁТИН" },
+        { clue: "ДЯДЯ", answer: "ДЯДИН" },
+        { clue: "БАБУШКА", answer: "БАБУШКИН" },
+        { clue: "КУРИЦА", answer: "КУРИЦЫН" },
+        { clue: "ЛИСИЦА", answer: "ЛИСИЦЫН" },
+        { clue: "САША", answer: "САШИН" },
+        { clue: "ЮЛЯ", answer: "ЮЛИН" }
+    ];
+
+    const container = document.getElementById('crossword-container');
+    const alphabet = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+
+    // Speichert den aktuellen Fortschritt pro Wort
+    let progress = puzzleData.map(d => "");
+
+    function renderPuzzle() {
+        container.innerHTML = '';
+        puzzleData.forEach((item, wordIdx) => {
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-item';
+            
+            // Gitter generieren
+            let gridHtml = `<span class="clue">${wordIdx + 1}. ${item.clue} &rarr;</span><div class="grid-row">`;
+            for (let i = 0; i < item.answer.length; i++) {
+                const char = progress[wordIdx][i] || '';
+                let statusClass = '';
+                if (char) {
+                    statusClass = char === item.answer[i] ? 'correct' : 'error';
+                }
+                gridHtml += `<div class="cell ${statusClass}">${char}</div>`;
+            }
+            gridHtml += `</div>`;
+
+            // Tastenfeld generieren (nur Buchstaben, die im Wort vorkommen + ein paar extra zur Auswahl)
+            let uniqueChars = Array.from(new Set(item.answer + "АНЫИ")); 
+            uniqueChars.sort();
+
+            let keypadHtml = `<div class="keypad">`;
+            uniqueChars.forEach(char => {
+                keypadHtml += `<button class="key" onclick="addLetter(${wordIdx}, '${char}')">${char}</button>`;
+            });
+            keypadHtml += `</div>`;
+
+            // Buttons
+            const buttonHtml = `
+                <div class="button-row">
+                    <button class="btn btn-reset" onclick="resetWord(${wordIdx})">Zurücksetzen</button>
+                    <button class="btn btn-solution" onclick="solveWord(${wordIdx})">Lösung</button>
+                </div>
+            `;
+
+            taskItem.innerHTML = gridHtml + keypadHtml + buttonHtml;
+            container.appendChild(taskItem);
+        });
+    }
+
+    window.addLetter = function(wordIdx, char) {
+        const target = puzzleData[wordIdx].answer;
+        if (progress[wordIdx].length < target.length) {
+            progress[wordIdx] += char;
+            renderPuzzle();
+        }
+    };
+
+    window.resetWord = function(wordIdx) {
+        progress[wordIdx] = "";
+        renderPuzzle();
+    };
+
+    window.solveWord = function(wordIdx) {
+        progress[wordIdx] = puzzleData[wordIdx].answer;
+        renderPuzzle();
+    };
+
+    // Initialisierung
+    renderPuzzle();
+</script>
+
+</body>
+</html>
