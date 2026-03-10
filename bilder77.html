@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Assistent: Bild-Besitzer-Zuordnung (12 Aufgaben)</title>
+    <!-- Polyfill für Drag & Drop auf Touch-Geräten -->
+    <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.3.1/DragDropTouch.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .intro-section {
+            background: #eef7fd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 6px solid var(--secondary-color);
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+
+        /* Adjektiv-Pool */
+        .adjective-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background: #fff;
+            border: 2px dashed var(--secondary-color);
+            border-radius: 12px;
+            margin-bottom: 30px;
+            justify-content: center;
+            min-height: 80px;
+            align-items: center;
+        }
+
+        .draggable-adj {
+            padding: 10px 15px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 6px;
+            cursor: grab;
+            font-weight: bold;
+            user-select: none;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .draggable-adj:active { cursor: grabbing; transform: scale(0.95); }
+
+        /* Grid für die Karten */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .drop-card {
+            background: #fdfdfd;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .drop-card.hover { border-color: var(--secondary-color); background: #f0f8ff; }
+
+        .owner-label { font-size: 0.85em; color: #666; font-style: italic; }
+        .object-emoji { font-size: 2.5em; margin: 5px 0; }
+        .object-name { font-weight: bold; font-size: 1em; color: var(--primary-color); }
+
+        .drop-slot {
+            width: 100%;
+            min-height: 50px;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f9f9f9;
+            transition: border-color 0.2s;
+        }
+
+        /* Feedback Zustände */
+        .draggable-adj.correct { background-color: var(--success-color) !important; border-color: #1e8449; }
+        .draggable-adj.incorrect { background-color: var(--error-color) !important; border-color: #c0392b; }
+
+        .button-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: opacity 0.2s;
+        }
+
+        .btn-reset { background-color: #7f8c8d; }
+        .btn-solution { background-color: var(--secondary-color); }
+        .btn:hover { opacity: 0.9; }
+
+        @media (max-width: 600px) {
+            .grid-container { grid-template-columns: 1fr 1fr; }
+            .container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Russische Grammatik</h1>
+    <h2>Bild-Besitzer-Zuordnung (12 Übungen)</h2>
+
+    <div class="intro-section">
+        <strong>Anleitung:</strong> Ziehe das passende Adjektiv auf das Objekt. Achte auf den Besitzer (in Klammern) sowie auf das Geschlecht/Anzahl des Objekts.
+        <br><br>
+        <em>Das Feedback (Richtig/Falsch) erscheint sofort beim Loslassen.</em>
+    </div>
+
+    <!-- Pool der Adjektive -->
+    <div class="adjective-pool" id="adj-pool" ondrop="handlePoolDrop(event)" ondragover="allowDrop(event)">
+        <!-- Adjektive werden per JS eingefügt und gemischt -->
+    </div>
+
+    <!-- Objekte-Grid -->
+    <div class="grid-container" id="objects-grid">
+        <!-- Karten werden per JS eingefügt -->
+    </div>
+
+    <div class="button-row">
+        <button class="btn btn-reset" onclick="resetAll()">Zurücksetzen & Mischen</button>
+        <button class="btn btn-solution" onclick="showSolution()">Lösung anzeigen</button>
+    </div>
+</div>
+
+<script>
+    const data = [
+        { id: "a1", owner: "БАБУШКА", obj: "ОЧКИ", emoji: "👓", adj: "БАБУШКИНЫ" },
+        { id: "a2", owner: "ПАПА", obj: "МАШИНА", emoji: "🚗", adj: "ПАПИНА" },
+        { id: "a3", owner: "МАМА", obj: "ТОРТ", emoji: "🎂", adj: "МАМИН" },
+        { id: "a4", owner: "САША", obj: "КАРАНДАШ", emoji: "✏️", adj: "САШИН" },
+        { id: "a5", owner: "КУРИЦА", obj: "ЯЙЦО", emoji: "🥚", adj: "КУРИЦЫНО" },
+        { id: "a6", owner: "СЕСТРА", obj: "КНИГА", emoji: "📖", adj: "СЕСТРИНА" },
+        { id: "a7", owner: "ЛИСИЦА", obj: "ХВОСТ", emoji: "🦊", adj: "ЛИСИЦЫН" },
+        { id: "a8", owner: "ЮЛЯ", obj: "ПОМАДА", emoji: "💄", adj: "ЮЛИНА" },
+        { id: "a9", owner: "ДЯДЯ", obj: "ТЕЛЕФОН", emoji: "📱", adj: "ДЯДИН" },
+        { id: "a10", owner: "ТЁТЯ", obj: "ПИСЬМО", emoji: "✉️", adj: "ТЁТИНО" },
+        { id: "a11", owner: "ПОДРУГА", obj: "ВЕЩИ", emoji: "👜", adj: "ПОДРУГИНЫ" },
+        { id: "a12", owner: "ЦАРИЦА", obj: "КОРОНА", emoji: "👑", adj: "ЦАРИЦЫНА" }
+    ];
+
+    function init() {
+        const pool = document.getElementById('adj-pool');
+        const grid = document.getElementById('objects-grid');
+        
+        // Karten erstellen (statisch geordnet)
+        grid.innerHTML = '';
+        data.forEach(item => {
+            grid.innerHTML += `
+                <div class="drop-card" data-correct-id="${item.id}">
+                    <span class="owner-label">(${item.owner})</span>
+                    <div class="object-emoji">${item.emoji}</div>
+                    <div class="object-name">${item.obj}</div>
+                    <div class="drop-slot" ondrop="handleDrop(event)" ondragover="allowDrop(event)" ondragleave="handleLeave(event)"></div>
+                </div>
+            `;
+        });
+
+        // Adjektive erstellen und mischen
+        renderShuffledPool();
+    }
+
+    function renderShuffledPool() {
+        const pool = document.getElementById('adj-pool');
+        pool.innerHTML = '';
+        const shuffled = [...data].sort(() => Math.random() - 0.5);
+        
+        shuffled.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'draggable-adj';
+            div.draggable = true;
+            div.id = item.id;
+            div.innerText = item.adj;
+            div.onscreen = item.adj;
+            div.addEventListener('dragstart', handleDragStart);
+            pool.appendChild(div);
+        });
+    }
+
+    // Drag & Drop Funktionen
+    function allowDrop(ev) {
+        ev.preventDefault();
+        const slot = ev.target.closest('.drop-slot');
+        if (slot) slot.classList.add('hover');
+    }
+
+    function handleLeave(ev) {
+        const slot = ev.target.closest('.drop-slot');
+        if (slot) slot.classList.remove('hover');
+    }
+
+    function handleDragStart(ev) {
+        ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    function handleDrop(ev) {
+        ev.preventDefault();
+        const adjId = ev.dataTransfer.getData("text");
+        const adjElement = document.getElementById(adjId);
+        const dropSlot = ev.target.closest('.drop-slot');
+        const dropCard = ev.target.closest('.drop-card');
+
+        if (dropSlot && dropCard) {
+            dropSlot.classList.remove('hover');
+            
+            // Falls schon ein Adjektiv im Slot ist -> zurück in den Pool
+            if (dropSlot.firstChild) {
+                const oldAdj = dropSlot.firstChild;
+                oldAdj.classList.remove('correct', 'incorrect');
+                document.getElementById('adj-pool').appendChild(oldAdj);
+            }
+
+            dropSlot.appendChild(adjElement);
+            
+            // Sofortiges Feedback
+            const correctId = dropCard.getAttribute('data-correct-id');
+            if (adjId === correctId) {
+                adjElement.classList.add('correct');
+                adjElement.classList.remove('incorrect');
+            } else {
+                adjElement.classList.add('incorrect');
+                adjElement.classList.remove('correct');
+            }
+        }
+    }
+
+    function handlePoolDrop(ev) {
+        ev.preventDefault();
+        const adjId = ev.dataTransfer.getData("text");
+        const adjElement = document.getElementById(adjId);
+        adjElement.classList.remove('correct', 'incorrect');
+        document.getElementById('adj-pool').appendChild(adjElement);
+    }
+
+    // Buttons
+    function resetAll() {
+        const adjs = document.querySelectorAll('.draggable-adj');
+        adjs.forEach(adj => {
+            adj.classList.remove('correct', 'incorrect');
+        });
+        renderShuffledPool();
+        // Slots leeren
+        document.querySelectorAll('.drop-slot').forEach(slot => slot.innerHTML = '');
+    }
+
+    function showSolution() {
+        const cards = document.querySelectorAll('.drop-card');
+        cards.forEach(card => {
+            const correctId = card.getAttribute('data-correct-id');
+            const adj = document.getElementById(correctId);
+            const slot = card.querySelector('.drop-slot');
+            
+            adj.classList.remove('incorrect');
+            adj.classList.add('correct');
+            slot.appendChild(adj);
+        });
+    }
+
+    // Start
+    window.onload = init;
+</script>
+
+</body>
+</html>
