@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Assistent: Endungs-Matching</title>
+    <!-- Polyfill für Drag & Drop auf Touch-Geräten (für allgemeine Kompatibilität) -->
+    <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.3.1/DragDropTouch.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .intro-section {
+            background: #eef7fd;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 6px solid var(--secondary-color);
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .task-card {
+            border: 1px solid #e1e4e8;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .sentence-display {
+            font-size: 1.25em;
+            color: var(--primary-color);
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .gap {
+            color: var(--secondary-color);
+            text-decoration: underline;
+            font-weight: bold;
+            padding: 0 5px;
+        }
+
+        .options-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .option-btn {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            min-width: 60px;
+        }
+
+        /* Sofortiges Feedback */
+        .option-btn.correct {
+            background-color: var(--success-color) !important;
+            color: white !important;
+            border-color: #1e8449 !important;
+        }
+
+        .option-btn.incorrect {
+            background-color: var(--error-color) !important;
+            color: white !important;
+            border-color: #c0392b !important;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: opacity 0.2s;
+        }
+
+        .btn-reset { background-color: #7f8c8d; }
+        .btn-solution { background-color: var(--secondary-color); }
+        .btn:hover { opacity: 0.9; }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            .sentence-display { font-size: 1.1em; }
+            .option-btn { flex: 1 1 40%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Russische Grammatik</h1>
+    <h2>Endungs-Matching</h2>
+
+    <div class="intro-section">
+        <strong>Einführung: Bildung und Verwendung</strong><br>
+        Die Endung des Possessivadjektivs richtet sich nach dem Genus (Geschlecht) und dem Numerus (Anzahl) des Substantivs, auf das es sich bezieht.
+        <br><br>
+        <strong>Regeln für die Endungen:</strong> 
+        <ul>
+            <li><strong>Maskulin:</strong> keine Endung (Symbol: <strong>Ø</strong>)</li>
+            <li><strong>Feminin:</strong> Endung <strong>-А</strong></li>
+            <li><strong>Neutrum:</strong> Endung <strong>-О</strong></li>
+            <li><strong>Plural:</strong> Endung <strong>-Ы</strong></li>
+        </ul>
+        <em>Wähle die richtige Endung für die Lücke aus!</em>
+    </div>
+
+    <div id="exercise-list">
+        <!-- Aufgaben werden hier generiert -->
+    </div>
+</div>
+
+<script>
+    const tasks = [
+        { sentence: "ЭТО МАМИН", gap: "__ СУМКА.", correct: "-А" },
+        { sentence: "ЭТО МАМИН", gap: "__ ТОРТ.", correct: "Ø" },
+        { sentence: "ЭТО МАМИН", gap: "__ ПЛАТЬЕ.", correct: "-О" },
+        { sentence: "ЭТО МАМИН", gap: "__ ТУФЛИ.", correct: "-Ы" },
+        { sentence: "ГДЕ ПАПИН", gap: "__ МАШИНА?", correct: "-А" },
+        { sentence: "ВОТ ПАПИН", gap: "__ КАБИНЕТ.", correct: "Ø" },
+        { sentence: "ЭТО ТЁТИН", gap: "__ ПИСЬМО.", correct: "-О" },
+        { sentence: "ЭТО БАБУШКИН", gap: "__ ОЧКИ.", correct: "-Ы" },
+        { sentence: "ЧЕЙ ЭТО САШИН", gap: "__ КАРАНДАШ?", correct: "Ø" },
+        { sentence: "ЭТО ЮЛИН", gap: "__ ПОМАДА.", correct: "-А" },
+        { sentence: "ГДЕ ИЛЬИН", gap: "__ ТЕЛЕФОН?", correct: "Ø" },
+        { sentence: "КУПИ КУРИЦЫН", gap: "__ ЯЙЦО.", correct: "-О" },
+        { sentence: "ВОТ ЛИСИЦЫН", gap: "__ ХВОСТ.", correct: "Ø" },
+        { sentence: "ЭТО ПОДРУГИН", gap: "__ ВЕЩИ.", correct: "-Ы" },
+        { sentence: "ГДЕ ДАШИН", gap: "__ КУРТКА?", correct: "-А" },
+        { sentence: "ЭТО СЕСТРИН", gap: "__ КНИГА.", correct: "-А" },
+        { sentence: "ЭТО ЦАРИЦЫН", gap: "__ КОРОНА.", correct: "-А" },
+        { sentence: "Я ВИЖУ ЮРИН", gap: "__ ВЗГЛЯД.", correct: "Ø" },
+        { sentence: "ЭТО СИНИЦЫН", gap: "__ ПЕРО.", correct: "-О" },
+        { sentence: "ГДЕ ДОЧКИН", gap: "__ ИГРУШКИ?", correct: "-Ы" }
+    ];
+
+    const options = ["Ø", "-А", "-О", "-Ы"];
+    const exerciseList = document.getElementById('exercise-list');
+
+    tasks.forEach((task, index) => {
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.id = `task-${index}`;
+
+        const optionsHtml = options.map(opt => 
+            `<button class="option-btn" onclick="checkAnswer(${index}, '${opt}', this)">${opt}</button>`
+        ).join('');
+
+        card.innerHTML = `
+            <div class="sentence-display">
+                ${task.sentence}<span class="gap" id="gap-${index}">__</span>${task.gap.replace('__', '')}
+            </div>
+            <div class="options-row">
+                ${optionsHtml}
+            </div>
+            <div class="button-row">
+                <button class="btn btn-reset" onclick="resetTask(${index})">Zurücksetzen</button>
+                <button class="btn btn-solution" onclick="showSolution(${index})">Lösung anzeigen</button>
+            </div>
+        `;
+        exerciseList.appendChild(card);
+    });
+
+    window.checkAnswer = function(taskIndex, selectedOption, buttonElement) {
+        const task = tasks[taskIndex];
+        const card = document.getElementById(`task-${taskIndex}`);
+        const gap = document.getElementById(`gap-${taskIndex}`);
+        const allButtons = card.querySelectorAll('.option-btn');
+
+        allButtons.forEach(btn => btn.classList.remove('correct', 'incorrect'));
+
+        if (selectedOption === task.correct) {
+            buttonElement.classList.add('correct');
+            gap.innerText = (selectedOption === "Ø" ? "" : selectedOption.replace('-', ''));
+            gap.style.color = "var(--success-color)";
+        } else {
+            buttonElement.classList.add('incorrect');
+            gap.innerText = "__";
+            gap.style.color = "var(--secondary-color)";
+        }
+    };
+
+    window.resetTask = function(taskIndex) {
+        const card = document.getElementById(`task-${taskIndex}`);
+        const gap = document.getElementById(`gap-${taskIndex}`);
+        const allButtons = card.querySelectorAll('.option-btn');
+        
+        allButtons.forEach(btn => btn.classList.remove('correct', 'incorrect'));
+        gap.innerText = "__";
+        gap.style.color = "var(--secondary-color)";
+    };
+
+    window.showSolution = function(taskIndex) {
+        const task = tasks[taskIndex];
+        const card = document.getElementById(`task-${taskIndex}`);
+        const gap = document.getElementById(`gap-${taskIndex}`);
+        const allButtons = card.querySelectorAll('.option-btn');
+
+        allButtons.forEach(btn => {
+            btn.classList.remove('incorrect');
+            if (btn.innerText === task.correct) {
+                btn.classList.add('correct');
+                gap.innerText = (task.correct === "Ø" ? "" : task.correct.replace('-', ''));
+                gap.style.color = "var(--success-color)";
+            } else {
+                btn.classList.remove('correct');
+            }
+        });
+    };
+</script>
+
+</body>
+</html>
